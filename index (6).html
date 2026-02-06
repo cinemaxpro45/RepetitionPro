@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Repetition Pro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #f8fafc; /* slate-50 */
+        color: #1e293b; /* slate-800 */
+        overflow: hidden;
+        touch-action: manipulation;
+        -webkit-font-smoothing: antialiased;
+      }
+      .font-display {
+        font-family: 'Space Grotesk', sans-serif;
+      }
+      .font-poppins {
+        font-family: 'Poppins', sans-serif;
+      }
+      /* Smooth transitions for layout changes */
+      .transition-layout {
+        transition-property: all;
+        transition-duration: 500ms;
+        transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      
+      .safe-area-top {
+        padding-top: max(env(safe-area-inset-top), 24px);
+      }
+      .safe-area-bottom {
+        padding-bottom: max(env(safe-area-inset-bottom), 24px);
+      }
+      
+      /* Hide scrollbar for menu */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* Custom Animations for GameGuide */
+      @keyframes slideInUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes zoomIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      .animate-slide-up {
+        animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      .animate-zoom-in {
+        animation: zoomIn 0.3s ease-out forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useMemo, useRef } = React;
+
+      // --- CONSTANTS & TYPES ---
+
+      const Character = {
+        CLAIRE: "CLAIRE",
+        AUDITEUR: "L'AUDITEUR",
+        DIRECTEUR: "LE DIRECTEUR",
+        SCENE_HEADING: "SCENE",
+        ACTION: "ACTION"
+      };
+
+      const RehearsalMode = {
+        READ: "READ",
+        MEMORIZE: "MEMORIZE"
+      };
+
+      const ViewMode = {
+        ALL_DIALOGUE: "DIALOGUE",
+        MY_LINES: "MOI",
+        CONTEXT: "CONTEXTE"
+      };
+
+      const SCRIPT_DATA = [
+        {
+          id: '1',
+          character: Character.SCENE_HEADING,
+          text: '1. INT. BUREAU DE CLAIRE - NUIT'
+        },
+        {
+          id: '2',
+          character: Character.ACTION,
+          text: "Le bureau est vaste, moderne, mais froid. Seule la lampe de bureau de CLAIRE est allumée. On frappe à la porte. Trois coups. Secs. Rythmés. Claire ne lève pas la tête."
+        },
+        {
+          id: '3',
+          character: Character.CLAIRE,
+          text: "Entrez."
+        },
+        {
+          id: '4',
+          character: Character.ACTION,
+          text: "La porte s'ouvre. L'AUDITEUR (30 ans) entre. Il porte un costume gris un peu terne, un badge 'VISITEUR'. Il a l'air inoffensif."
+        },
+        {
+          id: '5',
+          character: Character.AUDITEUR,
+          text: "Bonsoir. Navré pour l'heure. Le service sécurité m'envoie pour la mise à jour des protocoles."
+        },
+        {
+          id: '6',
+          character: Character.ACTION,
+          text: "Claire souffle bruyamment. Elle continue de taper."
+        },
+        {
+          id: '7',
+          character: Character.CLAIRE,
+          mood: "(Sans le regarder)",
+          text: "Je n'ai pas reçu de mémo. Repassez demain."
+        },
+        {
+          id: '8',
+          character: Character.ACTION,
+          text: "L'Auditeur avance quand même. Il ne s'impose pas, il glisse dans la pièce."
+        },
+        {
+          id: '9',
+          character: Character.AUDITEUR,
+          text: "C'est la nouvelle directive RGPD. Juste une double authentification sur votre poste. Ça prend deux minutes."
+        },
+        {
+          id: '10',
+          character: Character.ACTION,
+          text: "Il s'assoit en face d'elle sans attendre l'invitation. Il allume sa tablette."
+        },
+        {
+          id: '11',
+          character: Character.CLAIRE,
+          mood: "(Agacée)",
+          text: "Allez-y. Faites vite. J'ai un bilan à finir pour demain matin."
+        },
+        {
+          id: '12',
+          character: Character.AUDITEUR,
+          text: "Bien sûr."
+        },
+        {
+          id: '13',
+          character: Character.ACTION,
+          text: "Il tapote deux commandes banales sur sa tablette."
+        },
+        {
+          id: '14',
+          character: Character.AUDITEUR,
+          text: "Vous utilisez toujours le VPN par défaut ?"
+        },
+        {
+          id: '15',
+          character: Character.CLAIRE,
+          mood: "(Distraite)",
+          text: "Oui, oui."
+        },
+        {
+          id: '16',
+          character: Character.AUDITEUR,
+          text: "Parfait. Je synchronise."
+        },
+        {
+          id: '17',
+          character: Character.ACTION,
+          text: "Il tapote sur sa tablette. Le silence revient. Pesant. Claire continue de travailler. L'Auditeur s'arrête de taper. Il la fixe. Le bruit du clavier de Claire ralentit. Elle finit par s'arrêter."
+        },
+        {
+          id: '18',
+          character: Character.CLAIRE,
+          text: "Il y a un problème ?"
+        },
+        {
+          id: '19',
+          character: Character.ACTION,
+          text: "L'Auditeur change de posture. Son dos se redresse. Son visage perd son expression d'excuse pour devenir totalement neutre. Chirurgical."
+        },
+        {
+          id: '20',
+          character: Character.AUDITEUR,
+          text: "Vous avez changé le code de l'alarme de votre maison hier soir, Claire."
+        },
+        {
+          id: '21',
+          character: Character.ACTION,
+          text: "Claire fronce les sourcils. Elle rit nerveusement, incrédule."
+        },
+        {
+          id: '22',
+          character: Character.CLAIRE,
+          text: "Pardon ?"
+        },
+        {
+          id: '23',
+          character: Character.AUDITEUR,
+          mood: "(Calme, monocorde)",
+          text: "14. 07. 89."
+        },
+        {
+          id: '24',
+          character: Character.ACTION,
+          text: "Claire se fige. Sa main reste en l'air."
+        },
+        {
+          id: '25',
+          character: Character.AUDITEUR,
+          text: "La date de naissance de Léo. C'est touchant. Mais c'est un mot de passe faible."
+        },
+        {
+          id: '26',
+          character: Character.ACTION,
+          text: "Claire recule sa chaise. Le cuir grince."
+        },
+        {
+          id: '27',
+          character: Character.CLAIRE,
+          text: "Qui êtes-vous ? Comment connaissez-vous le nom de mon fils ?"
+        },
+        {
+          id: '28',
+          character: Character.ACTION,
+          text: "L'Auditeur ne répond pas. Il se lève, contourne le bureau. Il se penche vers un cadre photo. Il le redresse d'un millimètre avec une précision maniaque."
+        },
+        {
+          id: '29',
+          character: Character.AUDITEUR,
+          text: "J'ai accès à tout. Vos mails pros. Vos comptes personnels. La webcam de votre salon..."
+        },
+        {
+          id: '30',
+          character: Character.ACTION,
+          text: "Il se penche à son oreille. Claire est tétanisée."
+        },
+        {
+          id: '31',
+          character: Character.AUDITEUR,
+          mood: "(Murmure)",
+          text: "Votre mari regarde la télévision en ce moment. Il porte ce vieux t-shirt gris. Celui avec le trou au col."
+        },
+        {
+          id: '32',
+          character: Character.ACTION,
+          text: "Claire panique. Elle veut saisir le téléphone. L'Auditeur débranche le fil du mur."
+        },
+        {
+          id: '33',
+          character: Character.AUDITEUR,
+          text: "Pas de police. Pas de sécurité."
+        },
+        {
+          id: '34',
+          character: Character.CLAIRE,
+          mood: "(Voix tremblante)",
+          text: "Je n'ai pas d'argent liquide ici. Prenez mon ordinateur, prenez ce que vous voulez mais partez."
+        },
+        {
+          id: '35',
+          character: Character.ACTION,
+          text: "L'Auditeur revient s'asseoir en face d'elle. Il la regarde droit dans les yeux."
+        },
+        {
+          id: '36',
+          character: Character.AUDITEUR,
+          text: "Je me fous de votre argent. Je veux l'accès Root au serveur central. Maintenant."
+        },
+        {
+          id: '37',
+          character: Character.CLAIRE,
+          text: "Je... je ne peux pas. C'est impossible. Je serai licenciée, je serai poursuivie..."
+        },
+        {
+          id: '38',
+          character: Character.AUDITEUR,
+          text: "Si vous ne me donnez pas ce code, je détruis tout. Pas la boîte. Vous."
+        },
+        {
+          id: '39',
+          character: Character.ACTION,
+          text: "Il tapote une commande sur sa tablette."
+        },
+        {
+          id: '40',
+          character: Character.AUDITEUR,
+          text: "Je publie l'historique de vos conversations privées. J'efface vos comptes d'épargne. Et Léo... on sait où il va à l'école."
+        },
+        {
+          id: '41',
+          character: Character.ACTION,
+          text: "Claire se lève pour fuir. L'Auditeur se lève aussi et lui barre le passage."
+        },
+        {
+          id: '42',
+          character: Character.CLAIRE,
+          text: "Vous êtes malade ! Laissez-moi sortir !"
+        },
+        {
+          id: '43',
+          character: Character.ACTION,
+          text: "L'Auditeur regarde sa montre."
+        },
+        {
+          id: '44',
+          character: Character.AUDITEUR,
+          text: "Dix secondes, Claire."
+        },
+        {
+          id: '45',
+          character: Character.CLAIRE,
+          text: "Non ! S'il vous plaît !"
+        },
+        {
+          id: '46',
+          character: Character.AUDITEUR,
+          mood: "(Il compte, voix basse)",
+          text: "Dix. Neuf. Huit..."
+        },
+        {
+          id: '47',
+          character: Character.CLAIRE,
+          text: "Arrêtez !"
+        },
+        {
+          id: '48',
+          character: Character.AUDITEUR,
+          text: "... Sept. Six. Cinq..."
+        },
+        {
+          id: '49',
+          character: Character.ACTION,
+          text: "Claire hurle, paniquée, elle se prend la tête dans les mains."
+        },
+        {
+          id: '50',
+          character: Character.AUDITEUR,
+          mood: "(Voix qui monte, autoritaire)",
+          text: "QUATRE ! TROIS ! DEUX !"
+        },
+        {
+          id: '51',
+          character: Character.CLAIRE,
+          mood: "(Hurlement de désespoir)",
+          text: "ALPHA ! TANGO ! 59 ! DIÈSE ! C'EST BON ?! ALPHA TANGO 59 DIÈSE !"
+        },
+        {
+          id: '52',
+          character: Character.ACTION,
+          text: "Claire s'effondre. Silence. Le visage de l'Auditeur change instantanément. La menace disparaît."
+        },
+        {
+          id: '53',
+          character: Character.AUDITEUR,
+          mood: "(Ton neutre, scientifique)",
+          text: "Code validé. Accès serveur confirmé. Temps de résistance : 8 minutes et 30 secondes."
+        },
+        {
+          id: '54',
+          character: Character.ACTION,
+          text: "Claire relève la tête, ravagée. Elle ne comprend pas."
+        },
+        {
+          id: '55',
+          character: Character.CLAIRE,
+          text: "Quoi... ?"
+        },
+        {
+          id: '56',
+          character: Character.ACTION,
+          text: "La porte s'ouvre. LE DIRECTEUR (55 ans) entre. Il regarde l'Auditeur."
+        },
+        {
+          id: '57',
+          character: Character.DIRECTEUR,
+          text: "Alors ?"
+        },
+        {
+          id: '58',
+          character: Character.ACTION,
+          text: "L'Auditeur se tourne vers lui. Professionnel."
+        },
+        {
+          id: '59',
+          character: Character.AUDITEUR,
+          text: "Ingénierie sociale standard. Menace sur la sphère privée. Levier émotionnel 'famille'. Taux de réussite 100%."
+        },
+        {
+          id: '60',
+          character: Character.ACTION,
+          text: "Le Directeur hoche la tête, une grimace de déception sur le visage. Il se tourne enfin vers Claire."
+        },
+        {
+          id: '61',
+          character: Character.DIRECTEUR,
+          text: "Claire... On vous confie les clés de la maison mère. Des données confidentielles défense."
+        },
+        {
+          id: '62',
+          character: Character.CLAIRE,
+          text: "Monsieur le Directeur... il... il savait pour Léo... il..."
+        },
+        {
+          id: '63',
+          character: Character.DIRECTEUR,
+          mood: "(Froid)",
+          text: "Et alors ? Vous avez mis l'entreprise en danger mortel parce que vous avez eu peur ? Huit minutes trente, Claire. C'est tout ce qu'il a fallu pour vous briser."
+        },
+        {
+          id: '64',
+          character: Character.ACTION,
+          text: "Claire reste muette. Elle comprend la supercherie. Le Directeur fait un signe de tête à l'Auditeur."
+        },
+        {
+          id: '65',
+          character: Character.DIRECTEUR,
+          text: "Beau boulot. On débriefe ça demain ?"
+        },
+        {
+          id: '66',
+          character: Character.AUDITEUR,
+          mood: "(Il range sa tablette, détendu)",
+          text: "Avec plaisir. Je vous envoie le rapport complet ce soir."
+        },
+        {
+          id: '67',
+          character: Character.DIRECTEUR,
+          text: "Allez, je vous offre un verre en bas."
+        },
+        {
+          id: '68',
+          character: Character.ACTION,
+          text: "Le Directeur et l'Auditeur sortent. Ils discutent comme deux collègues."
+        },
+        {
+          id: '69',
+          character: Character.AUDITEUR,
+          mood: "(En sortant)",
+          text: "Vous saviez qu'elle utilisait sa date de naissance pour..."
+        },
+        {
+          id: '70',
+          character: Character.ACTION,
+          text: "Ils sortent. Claire est seule. La lumière s'éteint. Elle regarde ses mains qui tremblent. Elle regarde la caméra. CUT AU NOIR. FIN."
+        }
+      ];
+
+      // --- COMPONENTS ---
+
+      // 1. ScriptCard Component
+      const ScriptCard = ({ line, mode, state, onNext }) => {
+        const [isRevealed, setIsRevealed] = useState(false);
+
+        // Reset revealed state when line changes
+        useEffect(() => {
+          setIsRevealed(false);
+        }, [line.id]);
+
+        const isUser = line.character === Character.AUDITEUR;
+
+        // Logic for MEMORIZE mode
+        const shouldBlur = mode === RehearsalMode.MEMORIZE && isUser && !isRevealed && state === 'current';
+        
+        const handleClick = (e) => {
+          // If it's not the current card, ignore clicks or let them bubble
+          if (state !== 'current') return;
+
+          e.stopPropagation(); // Stop bubbling to the background navigation
+          
+          if (shouldBlur) {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+            setIsRevealed(true);
+          } else if (onNext) {
+            onNext();
+          }
+        };
+
+        // --- Dynamic Styles based on State ---
+        let containerStyle = "absolute w-full transition-layout left-0 right-0 mx-auto px-4 ";
+        
+        if (state === 'current') {
+          containerStyle += "top-1/2 -translate-y-1/2 opacity-100 scale-100 z-30 pointer-events-auto";
+        } else if (state === 'previous') {
+          containerStyle += "top-0 -translate-y-4 opacity-40 scale-90 z-10 blur-[1px] pointer-events-none origin-bottom";
+        } else {
+          containerStyle += "top-[150%] opacity-0 scale-95 z-0 pointer-events-none";
+        }
+
+        // --- Visual Identity ---
+        const getCardStyle = () => {
+          // Standard Card (Others)
+          let base = "bg-white border border-slate-100 shadow-md";
+          
+          if (isUser) {
+            // DARK PREMIUM USER DESIGN
+            // Deep Indigo Background + Subtle border + Shadow
+            return "bg-[#312e81] border border-indigo-700 shadow-xl shadow-indigo-900/50 ring-1 ring-white/10";
+          } 
+          
+          return base;
+        };
+
+        const getCharacterBadgeStyle = () => {
+          if (isUser) return "bg-rose-500 text-white shadow-lg shadow-rose-900/20"; // Pop color like image
+          if (line.character === Character.CLAIRE) return "bg-sky-100 text-sky-700";
+          if (line.character === Character.DIRECTEUR) return "bg-rose-100 text-rose-700";
+          return "bg-slate-100 text-slate-500";
+        };
+
+        return (
+          <div className={containerStyle}>
+            {/* Context Label */}
+            <div className={`text-center mb-6 transition-opacity duration-300 ${state === 'previous' ? 'opacity-100' : 'opacity-0'}`}>
+              <span className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">
+                Précédemment
+              </span>
+            </div>
+
+            <div 
+              onClick={handleClick}
+              className={`
+                relative rounded-[2rem] p-8 min-h-[280px] flex flex-col justify-center items-start
+                transition-all duration-300 ease-out cursor-pointer
+                ${getCardStyle()}
+              `}
+            >
+              {/* Character Badge */}
+              <div className="absolute -top-3 left-8">
+                <span className={`
+                  px-5 py-2 rounded-full text-xs font-bold tracking-wider uppercase
+                  ${getCharacterBadgeStyle()}
+                `}>
+                  {line.character}
+                </span>
+              </div>
+
+              {/* The Text Content */}
+              <div className="w-full mt-4">
+                {line.mood && (
+                  <div className={`text-sm font-medium italic mb-4 font-display ${isUser ? 'text-indigo-200' : 'text-slate-400'}`}>
+                    {line.mood}
+                  </div>
+                )}
+
+                <div className={`
+                  leading-relaxed transition-all duration-500
+                  ${isUser 
+                    ? 'text-3xl font-bold font-poppins text-white tracking-tight' // User: Poppins, White
+                    : 'text-2xl font-medium font-sans text-slate-600'} 
+                  ${shouldBlur ? 'blur-md select-none opacity-20 scale-[0.98]' : 'blur-0 opacity-100 scale-100'}
+                `}>
+                  {line.text}
+                </div>
+              </div>
+
+              {/* Tap to Reveal / Next Hint */}
+              {shouldBlur ? (
+                <div className="absolute inset-0 flex items-center justify-center z-10 rounded-[2rem] bg-[#312e81]/80 backdrop-blur-[2px]">
+                  <div className="bg-white/10 border border-white/20 text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse shadow-xl flex items-center gap-2 pointer-events-none">
+                    <span>👋</span> Révéler
+                  </div>
+                </div>
+              ) : (
+                  // Only show 'next' arrow if it's the current card
+                  state === 'current' && (
+                      <div className={`absolute bottom-6 right-8 ${isUser ? 'text-indigo-400' : 'text-slate-300'}`}>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                      </div>
+                  )
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      // 2. ScriptListView Component
+      const ScriptListView = ({ lines }) => {
+        return (
+          <div className="w-full h-full overflow-y-auto px-4 pb-32 pt-4 space-y-6 no-scrollbar">
+            {lines.map((line) => {
+              const isUser = line.character === Character.AUDITEUR;
+              
+              return (
+                <div 
+                  key={line.id}
+                  className={`
+                    relative p-6 rounded-2xl transition-all duration-200
+                    ${isUser 
+                      ? 'bg-[#312e81] border border-indigo-700 shadow-lg shadow-indigo-900/30 scale-[1.02] mx-1 ring-1 ring-white/10' 
+                      : 'bg-white border border-slate-100 text-slate-500 shadow-sm mx-2'}
+                  `}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                      <span className={`
+                        text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-full
+                        ${isUser ? 'bg-rose-500 text-white shadow-md' : 'bg-slate-100 text-slate-500'}
+                      `}>
+                        {line.character}
+                      </span>
+                  </div>
+                  
+                  {line.mood && (
+                    <div className={`text-xs italic mb-2 ${isUser ? 'text-indigo-300' : 'text-slate-400'}`}>
+                      {line.mood}
+                    </div>
+                  )}
+                  
+                  <p className={`
+                    leading-relaxed 
+                    ${isUser 
+                      ? 'text-xl font-bold font-poppins text-white tracking-tight' // Poppins for User
+                      : 'text-lg font-normal font-sans text-slate-600'}
+                  `}>
+                    {line.text}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        );
+      };
+
+      // 3. GameGuide Component
+      const GameGuide = ({ onClose }) => {
+        const [activeTab, setActiveTab] = useState('profil');
+
+        return (
+          <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col animate-slide-up font-sans">
+            
+            {/* Header */}
+            <div className="flex-none px-6 pt-12 pb-4 bg-white border-b border-slate-100 flex justify-between items-center shadow-sm">
+              <div>
+                <h2 className="text-2xl font-bold font-display text-slate-900">Guide de Jeu</h2>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">L'Auditeur</p>
+              </div>
+              <button 
+                onClick={onClose}
+                className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex-none px-4 py-2 bg-white overflow-x-auto no-scrollbar border-b border-slate-100">
+              <div className="flex gap-2">
+                {[
+                  { id: 'profil', icon: '👤', label: 'Profil' },
+                  { id: 'phases', icon: '⚡', label: 'Phases' },
+                  { id: 'rules', icon: '📜', label: '10 Lois' },
+                  { id: 'check', icon: '✅', label: 'Checklist' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 font-poppins
+                      ${activeTab === tab.id 
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 ring-2 ring-indigo-100' 
+                        : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}
+                    `}
+                  >
+                    <span>{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+              
+              {/* --- PROFIL TAB --- */}
+              {activeTab === 'profil' && (
+                <div className="space-y-6 animate-zoom-in">
+                  {/* Essence Card */}
+                  <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 text-9xl opacity-10 pointer-events-none">🎭</div>
+                    <div className="relative z-10">
+                      <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 backdrop-blur-sm">Ton Rôle</span>
+                      <h3 className="text-3xl font-display font-bold mb-2">Le Caméléon</h3>
+                      <p className="text-indigo-200 font-medium">De l'administratif ennuyeux à la menace pure.</p>
+                      
+                      <div className="mt-6 space-y-3">
+                        <div className="flex items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm">
+                          <span className="text-xl">🕵️‍♂️</span>
+                          <div>
+                            <div className="text-[10px] uppercase opacity-60">Métier Réel</div>
+                            <div className="font-bold text-sm">Pentester Humain / Ingénierie Sociale</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm">
+                          <span className="text-xl">🎯</span>
+                          <div>
+                            <div className="text-[10px] uppercase opacity-60">Ta Mission</div>
+                            <div className="font-bold text-sm text-rose-300">BRISER CLAIRE en 2 phases</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Coach Message */}
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 shadow-sm">
+                    <h3 className="flex items-center gap-2 font-bold text-amber-800 mb-4 font-display">
+                      <span className="text-2xl">💪</span> Message du Coach
+                    </h3>
+                    <ul className="space-y-3">
+                      <li className="flex gap-3 text-amber-900 text-sm font-medium">
+                        <span className="text-amber-500 font-bold">•</span>
+                        Ce rôle est un MARATHON psychologique.
+                      </li>
+                      <li className="flex gap-3 text-amber-900 text-sm font-medium">
+                        <span className="text-amber-500 font-bold">•</span>
+                        Tu n'es pas un méchant. Tu es un <span className="font-bold bg-amber-200 px-1 rounded">TESTEUR</span>.
+                      </li>
+                      <li className="flex gap-3 text-amber-900 text-sm font-medium">
+                        <span className="text-amber-500 font-bold">•</span>
+                        Le public doit te DÉTESTER... puis te COMPRENDRE.
+                      </li>
+                      <li className="flex gap-3 text-amber-900 text-sm font-medium">
+                        <span className="text-amber-500 font-bold">•</span>
+                        Claire est ton instrument. C'est TON film.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* --- PHASES TAB --- */}
+              {activeTab === 'phases' && (
+                <div className="space-y-8 animate-zoom-in pb-10">
+                  
+                  {/* Phase Comparison */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-200 rounded-2xl p-4 flex flex-col items-center text-center opacity-70 grayscale">
+                      <div className="text-4xl mb-2">🌫️</div>
+                      <h4 className="font-bold text-slate-700 text-sm mb-1">L'INVISIBLE</h4>
+                      <div className="w-full bg-slate-300 h-1.5 rounded-full mb-3 overflow-hidden">
+                        <div className="bg-slate-500 w-[30%] h-full"></div>
+                      </div>
+                      <ul className="text-xs text-slate-600 space-y-1 text-left w-full pl-2">
+                        <li>• Voûté</li>
+                        <li>• Regard bas</li>
+                        <li>• Monotone</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-rose-100 rounded-2xl p-4 flex flex-col items-center text-center border-2 border-rose-500 relative shadow-lg">
+                      <div className="absolute -top-3 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">MAIN</div>
+                      <div className="text-4xl mb-2">🦅</div>
+                      <h4 className="font-bold text-rose-800 text-sm mb-1">LE PRÉDATEUR</h4>
+                      <div className="w-full bg-rose-200 h-1.5 rounded-full mb-3 overflow-hidden">
+                        <div className="bg-rose-600 w-full h-full"></div>
+                      </div>
+                      <ul className="text-xs text-rose-800 space-y-1 text-left w-full pl-2 font-medium">
+                        <li>• Droit</li>
+                        <li>• Regard LASER</li>
+                        <li>• Chirurgical</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div>
+                    <h3 className="font-display font-bold text-lg mb-4 text-slate-800 flex items-center gap-2">
+                      <span>⏱️</span> Timeline d'Énergie
+                    </h3>
+                    <div className="space-y-4 relative">
+                      <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+
+                      {[
+                        { title: "L'Invisible", range: "Répl. 1-3", energy: "3/10", color: "bg-slate-400", desc: "Je m'efface. Ennuyeux." },
+                        { title: "Transformation", range: "Répl. 3→4", energy: "⚡", color: "bg-yellow-500", desc: "SWITCH INSTANTANÉ. Redressement." },
+                        { title: "Le Prédateur", range: "Répl. 4-12", energy: "8/10", color: "bg-orange-500", desc: "Je démolit son monde. Je sais tout." },
+                        { title: "Le Compte", range: "Répl. 13-16", energy: "10/10", color: "bg-red-600", desc: "Je la terrorise. Explosion vocale." },
+                        { title: "Le Scientifique", range: "Répl. 17-20", energy: "2/10", color: "bg-sky-500", desc: "Détendu. C'était un test." },
+                      ].map((phase, idx) => (
+                        <div key={idx} className="relative pl-10">
+                          <div className={`absolute left-0 w-6 h-6 rounded-full border-4 border-white shadow-md ${phase.color}`}></div>
+                          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-bold text-slate-800 text-sm">{phase.title}</span>
+                              <span className="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-500">{phase.range}</span>
+                            </div>
+                            <p className="text-xs text-slate-500 mb-2">{phase.desc}</p>
+                            {phase.energy !== '⚡' && (
+                              <div className="flex items-center gap-2">
+                                <div className="text-[10px] font-bold text-slate-400">ÉNERGIE</div>
+                                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className={`${phase.color} h-full`} style={{ width: phase.energy === "10/10" ? '100%' : phase.energy === "8/10" ? '80%' : '30%' }}></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* --- RULES TAB --- */}
+              {activeTab === 'rules' && (
+                <div className="space-y-4 animate-zoom-in">
+                  <h3 className="font-display font-bold text-center text-xl text-indigo-900 mb-6">Les 10 Commandements</h3>
+                  
+                  <div className="grid gap-3">
+                    {[
+                      { icon: "🦎", text: "Tu es un CAMÉLÉON, pas un acteur. Change de peau instantanément." },
+                      { icon: "👻", text: "EFFACE-TOI en Phase 1. Sois si ennuyeux qu'elle t'oublie." },
+                      { icon: "😶", text: "Le SILENCE est ton arme. Attends avant de te transformer." },
+                      { icon: "👁️", text: "Ton regard est un LASER. Fixe-la sans cligner (Phase 2)." },
+                      { icon: "🤖", text: "JAMAIS de colère. Tu es un algorithme qui exécute." },
+                      { icon: "📈", text: "Compte à rebours = CRESCENDO vocal. Explosion sur la fin." },
+                      { icon: "🎭", text: "Switch INSTANTANÉ dès qu'elle donne le code." },
+                      { icon: "🧱", text: "Phase 4 : elle n'existe plus. Tu parles au Directeur 'au-dessus' d'elle." },
+                      { icon: "🧘", text: "Ton corps RACONTE : Voûté → Droit → Agressif → Détendu." },
+                      { icon: "🕹️", text: "JOUIS du contrôle, mais ne le MONTRE jamais." },
+                    ].map((rule, i) => (
+                      <div key={i} className="flex gap-4 items-start bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:scale-[1.02] transition-transform">
+                        <span className="text-2xl flex-none bg-indigo-50 w-10 h-10 flex items-center justify-center rounded-full">{rule.icon}</span>
+                        <div>
+                          <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1 block">Loi #{i + 1}</span>
+                          <p className="text-sm font-medium text-slate-700 leading-snug">{rule.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* --- CHECKLIST TAB --- */}
+              {activeTab === 'check' && (
+                <div className="space-y-6 animate-zoom-in pb-12">
+                  
+                  <div className="bg-green-50 border border-green-100 p-6 rounded-3xl text-center">
+                    <h3 className="text-2xl font-bold text-green-800 mb-2">Avant de tourner</h3>
+                    <p className="text-green-600 text-sm">Coche chaque case pour valider ta préparation.</p>
+                  </div>
+
+                  {[
+                    { category: "Physique 🏋️", items: ["Posture voûtée maîtrisée (Phase 1)", "Posture dominante (Phase 2)", "Transformation en 5 secondes", "Regard Laser (2 min sans cligner)"] },
+                    { category: "Vocal 🗣️", items: ["Monotonie convaincante", "Froideur chirurgicale", "Crescendo du compte à rebours", "Murmure audible (T-shirt)"] },
+                    { category: "Émotionnel 🧠", items: ["Zéro colère (Neutre)", "Passage menaçant → Détendu", "Détachement final crédible"] },
+                    { category: "Texte 📝", items: ["Texte SU PAR CŒUR", "Pauses placées", "Mots-clés identifiés", "Rythme maîtrisé"] }
+                  ].map((section, sIdx) => (
+                    <div key={sIdx} className="space-y-3">
+                      <h4 className="font-bold font-poppins text-slate-900 ml-2">{section.category}</h4>
+                      <div className="space-y-2">
+                        {section.items.map((item, i) => (
+                          <label key={i} className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-slate-100 cursor-pointer active:scale-[0.98] transition-all">
+                            <input type="checkbox" className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                            <span className="text-sm text-slate-700 font-medium select-none">{item}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="text-center pt-8">
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Si tout est coché</p>
+                    <button className="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-lg">
+                      🚀 GO CASSER CLAIRE !
+                    </button>
+                  </div>
+                </div>
+              )}
+            
+            </div>
+          </div>
+        );
+      };
+
+      // 4. App Component
+      function App() {
+        const [currentIndex, setCurrentIndex] = useState(0);
+        const [rehearsalMode, setRehearsalMode] = useState(RehearsalMode.READ);
+        const [viewMode, setViewMode] = useState(ViewMode.ALL_DIALOGUE);
+        const [showGuide, setShowGuide] = useState(false);
+        
+        // Use a ref to scroll to top when switching views
+        const mainRef = useRef(null);
+
+        // --- Filtering Logic ---
+        const filteredScript = useMemo(() => {
+          // Base: All Dialogue
+          const dialogueOnly = SCRIPT_DATA.filter(line => 
+            line.character !== Character.ACTION && 
+            line.character !== Character.SCENE_HEADING
+          );
+
+          // For "Tout" (All Dialogue), we return everything.
+          // The view logic (List vs Stack) handles the presentation.
+          if (viewMode === ViewMode.ALL_DIALOGUE) {
+            return dialogueOnly;
+          }
+
+          if (viewMode === ViewMode.MY_LINES) {
+            return dialogueOnly.filter(line => line.character === Character.AUDITEUR);
+          }
+
+          if (viewMode === ViewMode.CONTEXT) {
+            const result = [];
+            for (let i = 0; i < dialogueOnly.length; i++) {
+              const line = dialogueOnly[i];
+              if (line.character === Character.AUDITEUR) {
+                // Add the cue if it exists
+                if (i > 0) {
+                  const prevLine = dialogueOnly[i-1];
+                  if (!result.includes(prevLine)) result.push(prevLine);
+                }
+                result.push(line);
+              }
+            }
+            return result;
+          }
+
+          return dialogueOnly;
+        }, [viewMode]);
+
+        // Reset index when filter changes
+        useEffect(() => {
+          setCurrentIndex(0);
+          if (mainRef.current) mainRef.current.scrollTop = 0;
+        }, [viewMode]);
+
+        const currentLine = filteredScript[currentIndex];
+        const previousLine = currentIndex > 0 ? filteredScript[currentIndex - 1] : null;
+        const progress = ((currentIndex + 1) / filteredScript.length) * 100;
+
+        // --- Navigation (Stack Mode) ---
+        const handleNext = () => {
+          if (currentIndex < filteredScript.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+          }
+        };
+
+        const handlePrev = () => {
+          if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(5);
+          }
+        };
+
+        const toggleRehearsalMode = () => {
+          setRehearsalMode(prev => prev === RehearsalMode.READ ? RehearsalMode.MEMORIZE : RehearsalMode.READ);
+        };
+
+        // Keyboard support
+        useEffect(() => {
+          if (viewMode === ViewMode.ALL_DIALOGUE) return; // Disable keyboard nav in scroll mode
+
+          const handleKeyDown = (e) => {
+            if (['ArrowRight', 'ArrowDown', ' ', 'Enter'].includes(e.key)) {
+              handleNext();
+            } else if (['ArrowLeft', 'ArrowUp'].includes(e.key)) {
+              handlePrev();
+            }
+          };
+          window.addEventListener('keydown', handleKeyDown);
+          return () => window.removeEventListener('keydown', handleKeyDown);
+        }, [currentIndex, filteredScript, viewMode]);
+
+        // --- Render ---
+
+        return (
+          <div className="h-screen w-full flex flex-col bg-slate-50 text-slate-800 font-sans overflow-hidden">
+            
+            {/* Background Gradients */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-[-20%] right-[-20%] w-[80vw] h-[80vw] bg-rose-100/50 rounded-full blur-[100px] opacity-60" />
+                <div className="absolute bottom-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-indigo-100/50 rounded-full blur-[100px] opacity-60" />
+            </div>
+
+            {/* Header */}
+            <header className="z-50 flex-none safe-area-top flex flex-col gap-4 pt-6 pb-2 bg-white/80 backdrop-blur-md border-b border-white/50 shadow-sm">
+              <div className="px-6 flex justify-between items-center">
+                <h1 className="font-display font-bold text-2xl tracking-tight text-slate-900">
+                  Repetition<span className="text-indigo-600">Pro</span>
+                </h1>
+
+                <div className="flex items-center gap-2">
+                  {/* Guide Button */}
+                  <button 
+                      onClick={() => setShowGuide(true)}
+                      className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm active:scale-95 transition-transform"
+                  >
+                      <span className="text-lg">🎭</span>
+                  </button>
+                  
+                  {/* Only show Memorize Toggle in Stack Modes */}
+                  {viewMode !== ViewMode.ALL_DIALOGUE && (
+                      <button 
+                      onClick={toggleRehearsalMode}
+                      className={`
+                          px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-bold transition-all font-poppins
+                          ${rehearsalMode === RehearsalMode.MEMORIZE 
+                          ? 'bg-slate-900 text-white shadow-md' 
+                          : 'bg-white text-slate-500 border border-slate-200'}
+                      `}
+                      >
+                      {rehearsalMode === RehearsalMode.MEMORIZE ? '🧠 Caché' : '👁️ Visible'}
+                      </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Menu */}
+              <div className="px-6 flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                  {[
+                      { id: ViewMode.ALL_DIALOGUE, label: "Tout (Scroll)" },
+                      { id: ViewMode.CONTEXT, label: "1 Clic" },
+                      { id: ViewMode.MY_LINES, label: "Moi Seulement" },
+                  ].map((m) => (
+                      <button
+                          key={m.id}
+                          onClick={() => setViewMode(m.id)}
+                          className={`
+                              whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 uppercase tracking-wide font-poppins
+                              ${viewMode === m.id 
+                                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
+                                  : 'bg-white text-slate-500 border border-slate-200'}
+                          `}
+                      >
+                          {m.label}
+                      </button>
+                  ))}
+              </div>
+            </header>
+
+            {/* Progress (Only for Stack Mode) */}
+            {viewMode !== ViewMode.ALL_DIALOGUE && (
+              <div className="w-full h-1 bg-slate-100 flex-none z-40">
+                <div 
+                  className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            )}
+
+            {/* Main Content Area */}
+            <main className="flex-1 relative w-full max-w-lg mx-auto h-full overflow-hidden" ref={mainRef}>
+              
+              {viewMode === ViewMode.ALL_DIALOGUE ? (
+                // --- SCROLL VIEW ---
+                <ScriptListView lines={filteredScript} />
+              ) : (
+                // --- STACK VIEW ---
+                <div className="relative w-full h-full perspective-[1000px]">
+                  
+                  {/* Navigation Tap Zones (Background) - Z-Index 10 */}
+                  <div 
+                    className="absolute top-0 left-0 w-full h-[30%] z-10 cursor-pointer active:bg-slate-100/20 transition-colors"
+                    onClick={handlePrev}
+                  />
+                  <div 
+                    className="absolute bottom-0 left-0 w-full h-[70%] z-10 cursor-pointer active:bg-slate-100/20 transition-colors"
+                    onClick={handleNext}
+                  />
+
+                  {/* Cards - Z-Index 20/30 (handled in Card) */}
+                  <div className="relative w-full h-full px-6 overflow-hidden pointer-events-none"> 
+                    {/* pointer-events-none allows clicks to pass through empty areas to the Nav Zones */}
+                    
+                    {previousLine && (
+                      <ScriptCard 
+                        key={`prev-${previousLine.id}`}
+                        line={previousLine}
+                        mode={rehearsalMode}
+                        state="previous"
+                      />
+                    )}
+
+                    {currentLine && (
+                      <ScriptCard 
+                        key={`curr-${currentLine.id}`}
+                        line={currentLine}
+                        mode={rehearsalMode}
+                        state="current"
+                        onNext={handleNext}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </main>
+            
+            {/* Footer Info (Stack Mode) */}
+            {viewMode !== ViewMode.ALL_DIALOGUE && (
+              <div className="h-12 flex-none flex items-center justify-center safe-area-bottom pointer-events-none opacity-50 z-50">
+                <span className="text-[10px] uppercase font-bold text-slate-400">
+                  {currentIndex + 1} / {filteredScript.length}
+                </span>
+              </div>
+            )}
+
+            {/* GAME GUIDE OVERLAY */}
+            {showGuide && <GameGuide onClose={() => setShowGuide(false)} />}
+
+          </div>
+        );
+      }
+
+      // --- MOUNT ---
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
+  </body>
+</html>
